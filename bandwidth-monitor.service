@@ -1,0 +1,12 @@
+[Unit]
+Description=Router bandwidth monitor (MX204)
+After=network-online.target
+
+[Service]
+WorkingDirectory=/home/arnab/bandwidth-monitor
+ExecStart=/usr/bin/python3 /home/arnab/bandwidth-monitor/bwmon.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

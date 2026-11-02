@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Router Bandwidth</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-0: #f4f4f2;
+    --surface-1: #fcfcfb;
+    --border: #e2e1dc;
+    --grid: #ecebe7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #77766f;
+    --series-in: #2a78d6;
+    --series-out: #eb6834;
+    --critical: #d03b3b;
+    --good: #0ca30c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-0: #111110;
+      --surface-1: #1a1a19;
+      --border: #2e2e2b;
+      --grid: #262624;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #9a998f;
+      --series-in: #3987e5;
+      --series-out: #d95926;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-0: #111110;
+    --surface-1: #1a1a19;
+    --border: #2e2e2b;
+    --grid: #262624;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #9a998f;
+    --series-in: #3987e5;
+    --series-out: #d95926;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--surface-0); color: var(--text-primary);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+  h1 { font-size: 20px; margin: 0; }
+  .status { color: var(--text-secondary); font-size: 13px; }
+  .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .heroes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 16px 0; }
+  .hero .label { color: var(--text-secondary); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  .swatch { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+  .hero .value { font-size: 40px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+  .hero .value small { font-size: 18px; font-weight: 500; color: var(--text-secondary); margin-left: 4px; }
+  .hero .sub { color: var(--text-muted); font-size: 12px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .ranges { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .ranges button {
+    background: none; border: 0; padding: 6px 12px; color: var(--text-secondary); font: inherit; cursor: pointer;
+  }
+  .ranges button + button { border-left: 1px solid var(--border); }
+  .ranges button[aria-pressed="true"] { background: var(--grid); color: var(--text-primary); font-weight: 600; }
+  .legend { display: flex; gap: 16px; color: var(--text-secondary); font-size: 13px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .chart-wrap { position: relative; }
+  svg { display: block; width: 100%; height: 300px; }
+  .axis text { fill: var(--text-muted); font-size: 11px; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .tip {
+    position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
+    white-space: nowrap; display: none; font-variant-numeric: tabular-nums;
+  }
+  .tip .t { color: var(--text-muted); margin-bottom: 4px; }
+  .tip .row { display: flex; align-items: center; gap: 6px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 12px; }
+  .stat { border-top: 1px solid var(--border); padding-top: 8px; }
+  .stat .k { color: var(--text-muted); font-size: 12px; }
+  .stat .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+  h2 { font-size: 15px; margin: 24px 0 8px; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-secondary); font-weight: 500; font-size: 12px; }
+  tfoot td { font-weight: 600; border-bottom: 0; }
+  .note { color: var(--text-muted); font-size: 12px; margin-top: 8px; }
+  .events { color: var(--text-secondary); font-size: 12px; margin: 0; padding-left: 18px; }
+  .hero .pair { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 4px; }
+  .hero .pair .value { font-size: 30px; }
+  .hero .pair .dir { color: var(--text-secondary); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .hero h3 { margin: 0; font-size: 14px; }
+  .hero .why { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
+  .views { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .views button { background: none; border: 0; padding: 6px 12px; color: var(--text-secondary); font: inherit; cursor: pointer; }
+  .views button + button { border-left: 1px solid var(--border); }
+  .views button[aria-pressed="true"] { background: var(--grid); color: var(--text-primary); font-weight: 600; }
+  details { border-top: 1px solid var(--border); }
+  details:first-child { border-top: 0; }
+  summary { cursor: pointer; padding: 10px 4px; display: flex; gap: 12px; align-items: baseline; font-variant-numeric: tabular-nums; }
+  summary .name { font-weight: 600; min-width: 140px; }
+  summary .desc { color: var(--text-muted); font-size: 12px; flex: 1; }
+  summary .nums { color: var(--text-secondary); white-space: nowrap; }
+  .warn { color: var(--critical); }
+  td.alias { color: var(--text-muted); text-align: left; }
+  #breakdown th:nth-child(2) { text-align: left; }
+  .h-sub { color: var(--text-muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
+  h2 + .note { margin: -4px 0 8px; }
+  .conf { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; border: 1px solid var(--border); }
+  .conf-High { color: var(--text-primary); }
+  .conf-Medium { color: var(--text-secondary); }
+  .conf-Low { color: var(--critical); border-color: currentColor; }
+  td.why { color: var(--text-secondary); text-align: left; white-space: normal; min-width: 260px; font-size: 12px; }
+  .lists th.l { text-align: left; }
+  tr.idle td:not(.why) { color: var(--text-muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Router Bandwidth <span id="router" class="status"></span></h1>
+    <div class="status" id="status" role="status"></div>
+  </header>
+
+  <section class="heroes" aria-label="Current bandwidth">
+    <div class="card hero">
+      <h3>Buying</h3>
+      <div class="pair">
+        <div><div class="dir"><span class="swatch" style="background:var(--series-in)"></span>From upstreams</div><div class="value" id="buy-in">–</div></div>
+        <div><div class="dir"><span class="swatch" style="background:var(--series-out)"></span>To upstreams</div><div class="value" id="buy-out">–</div></div>
+      </div>
+      <div class="why">Summit-ITC, Bharti-IPT, FGL transit links</div>
+    </div>
+    <div class="card hero">
+      <h3>Providing</h3>
+      <div class="pair">
+        <div><div class="dir"><span class="swatch" style="background:var(--series-out)"></span>To customers</div><div class="value" id="prov-out">–</div></div>
+        <div><div class="dir"><span class="swatch" style="background:var(--series-in)"></span>From customers</div><div class="value" id="prov-in">–</div></div>
+      </div>
+      <div class="why">Customers and your distribution routers</div>
+    </div>
+    <div class="card hero">
+      <h3>Router total</h3>
+      <div class="pair">
+        <div><div class="dir"><span class="swatch" style="background:var(--series-in)"></span>Incoming</div><div class="value" id="tot-in">–</div></div>
+        <div><div class="dir"><span class="swatch" style="background:var(--series-out)"></span>Outgoing</div><div class="value" id="tot-out">–</div></div>
+      </div>
+      <div class="why" id="cur-ts"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <div class="views" role="group" aria-label="View" id="views">
+        <button data-view="buy">Buying</button>
+        <button data-view="provide">Providing</button>
+        <button data-view="total">Router total</button>
+      </div>
+      <div class="ranges" role="group" aria-label="Time range" id="ranges">
+        <button data-range="3600">1h</button>
+        <button data-range="21600">6h</button>
+        <button data-range="86400">24h</button>
+        <button data-range="604800">7d</button>
+        <button data-range="2592000">30d</button>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="chart-wrap">
+      <svg id="chart" role="img" aria-label="Bandwidth over time"></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <p class="note" id="bucket-note"></p>
+  </section>
+
+  <h2>Buying interfaces <span class="h-sub" id="buy-sub"></span></h2>
+  <p class="note">Links to your internet providers. In = traffic you take from the internet.</p>
+  <div class="card table-scroll" id="list-buy"></div>
+
+  <h2>Providing interfaces <span class="h-sub" id="provide-sub"></span></h2>
+  <p class="note">Links to customers and to your own distribution routers. Out = traffic you deliver to them.</p>
+  <div class="card table-scroll" id="list-provide"></div>
+
+  <h2>Other interfaces <span class="h-sub" id="other-sub"></span></h2>
+  <p class="note">Counted in neither buying nor providing: peering, caches, pass-through, management and anything not yet classified.</p>
+  <div class="card table-scroll" id="list-other"></div>
+  <p class="note" id="balance"></p>
+
+  <h2>Discarded samples</h2>
+  <div class="card"><ul class="events" id="events"></ul></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const ROLE_INFO = {
+  buy:          ["Buying", "Upstream transit you pay for"],
+  provide:      ["Providing", "Customers and your distribution routers"],
+  peer:         ["Peering", "Private interconnects (FGL PNI) — not bought transit"],
+  cache:        ["Cache / CDN", "Content sources (GGC, CDN) feeding this router"],
+  transport:    ["Pass-through", "Traffic that only moves between two VLANs here"],
+  mgmt:         ["Management", "Switch management VLANs"],
+  unclassified: ["Unclassified", "Not yet assigned in config.json"],
+};
+// Per view: which counter direction is the headline, and how to name each direction.
+const VIEWS = {
+  buy:     { in: "From upstreams", out: "To upstreams" },
+  provide: { in: "From customers", out: "To customers" },
+  total:   { in: "Incoming", out: "Outgoing" },
+};
+let range = 86400, view = "buy";
+try { range = Number(localStorage.getItem("range")) || range; view = localStorage.getItem("view") || view; } catch (e) {}
+if (!VIEWS[view]) view = "buy";
+
+function fmt(bps, parts) {
+  if (bps == null) return parts ? ["–", ""] : "–";
+  const units = [[1e12, "Tbps"], [1e9, "Gbps"], [1e6, "Mbps"], [1e3, "Kbps"]];
+  const [div, unit] = units.find(([d]) => bps >= d) || [1, "bps"];
+  const v = bps / div;
+  const s = v >= 100 ? v.toFixed(1) : v.toFixed(2);
+  return parts ? [s, unit] : `${s} ${unit}`;
+}
+function setVal(el, bps) {
+  const [v, u] = fmt(bps, true);
+  el.textContent = v;
+  const small = document.createElement("small"); small.textContent = u; el.appendChild(small);
+}
+const tfmt = (ts, long) => new Date(ts * 1000).toLocaleString([], long
+  ? { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }
+  : range > 172800 ? { month: "short", day: "numeric" } : { hour: "2-digit", minute: "2-digit" });
+const text = (tag, t, cls) => { const e = document.createElement(tag); e.textContent = t; if (cls) e.className = cls; return e; };
+
+async function loadCurrent() {
+  const r = await fetch("/api/current").then((x) => x.json());
+  $("router").textContent = r.router;
+  const st = r.status, now = Date.now() / 1000;
+  const stale = !st.last_poll || now - st.last_poll > r.interval * 3;
+  const bad = st.last_error || stale;
+  const dot = text("span", "", "dot"); dot.style.background = bad ? "var(--critical)" : "var(--good)";
+  $("status").replaceChildren(dot, bad
+    ? `Not polling: ${st.last_error || "no recent sample"}`
+    : `Polling every ${r.interval}s · ${st.ports.length} physical ports`);
+  const role = (k) => r.roles[k] || {};
+  setVal($("buy-in"), role("buy").in_bps); setVal($("buy-out"), role("buy").out_bps);
+  setVal($("prov-out"), role("provide").out_bps); setVal($("prov-in"), role("provide").in_bps);
+  if (r.latest) {
+    setVal($("tot-in"), r.latest.in_bps); setVal($("tot-out"), r.latest.out_bps);
+    $("cur-ts").textContent = "All physical ports · " + tfmt(r.latest.ts, true);
+  } else {
+    $("cur-ts").textContent = `Waiting for the first ${r.interval}s interval…`;
+  }
+
+  const TYPE = { peer: "Peering", cache: "Cache / CDN", transport: "Pass-through", mgmt: "Management", unclassified: "Unclassified" };
+  function buildTable(target, links, opts) {
+    const tb = document.createElement("table"); tb.className = "lists";
+    const cols = [["Interface", "l"], ["Description", "l"]].concat(opts.type ? [["Type", "l"]] : [])
+      .concat([["In", ""], ["Out", ""]]).concat(opts.contract ? [["Contract", ""]] : []).concat([["Confidence", "l"], ["Why", "l"]]);
+    const thead = document.createElement("thead"); const hr = document.createElement("tr");
+    cols.forEach(([h, c]) => hr.appendChild(text("th", h, c))); thead.appendChild(hr); tb.appendChild(thead);
+    const body = document.createElement("tbody");
+    links.forEach((l) => {
+      const tr = document.createElement("tr");
+      if (l.in_bps + l.out_bps < 1e5) tr.className = "idle";
+      tr.append(text("td", l.name), text("td", l.alias, "alias"));
+      if (opts.type) tr.append(text("td", TYPE[l.role] || l.role, "alias"));
+      tr.append(text("td", fmt(l.in_bps)), text("td", fmt(l.out_bps)));
+      if (opts.contract) tr.append(text("td", l.contract_bps
+        ? `${fmt(l.contract_bps)} (${Math.round(Math.max(l.in_bps, l.out_bps) / l.contract_bps * 100)}% used)` : "not set"));
+      const ct = document.createElement("td"); ct.className = "alias";
+      if (l.confidence) ct.appendChild(text("span", l.confidence, `conf conf-${l.confidence}`));
+      tr.append(ct, text("td", l.note, "why"));
+      body.appendChild(tr);
+    });
+    tb.appendChild(body);
+    const foot = document.createElement("tfoot"); const fr = document.createElement("tr");
+    const si = links.reduce((a, l) => a + l.in_bps, 0), so = links.reduce((a, l) => a + l.out_bps, 0);
+    fr.append(text("td", "Total"), text("td", ""));
+    if (opts.type) fr.append(text("td", ""));
+    fr.append(text("td", fmt(si)), text("td", fmt(so)));
+    if (opts.contract) fr.append(text("td", ""));
+    fr.append(text("td", ""), text("td", ""));
+    foot.appendChild(fr); tb.appendChild(foot);
+    $(target).replaceChildren(tb);
+  }
+  const byTraffic = (a, b) => (b.in_bps + b.out_bps) - (a.in_bps + a.out_bps) || a.name.localeCompare(b.name);
+  const sub = (links) => {
+    const active = links.filter((l) => l.in_bps + l.out_bps >= 1e5).length;
+    return `${links.length} interfaces · ${active} carrying traffic`;
+  };
+  const buyL = r.links.filter((l) => l.role === "buy").sort(byTraffic);
+  const provL = r.links.filter((l) => l.role === "provide").sort(byTraffic);
+  const otherOrder = ["peer", "cache", "transport", "mgmt", "unclassified"];
+  const otherL = r.links.filter((l) => otherOrder.includes(l.role))
+    .sort((a, b) => otherOrder.indexOf(a.role) - otherOrder.indexOf(b.role) || byTraffic(a, b));
+  buildTable("list-buy", buyL, { contract: true });
+  buildTable("list-provide", provL, {});
+  buildTable("list-other", otherL, { type: true });
+  $("buy-sub").textContent = sub(buyL); $("provide-sub").textContent = sub(provL); $("other-sub").textContent = sub(otherL);
+
+  if (r.latest) {
+    const si = Object.values(r.roles).reduce((a, v) => a + v.in_bps, 0);
+    const so = Object.values(r.roles).reduce((a, v) => a + v.out_bps, 0);
+    const pct = (a, b) => (b ? ((a - b) / b * 100).toFixed(1) : "0") + "%";
+    $("balance").textContent = `Groups add up to in ${fmt(si)} / out ${fmt(so)} vs router total in ${fmt(r.latest.in_bps)} / out ${fmt(r.latest.out_bps)} `
+      + `(${pct(si, r.latest.in_bps)} / ${pct(so, r.latest.out_bps)}). The router updates port and VLAN counters at slightly different moments, `
+      + `so single minutes can differ by a few percent; longer averages agree within about 0.5%.`;
+  }
+  if (st.unclassified.length) $("balance").textContent += ` Unclassified links: ${st.unclassified.join(", ")}.`;
+  $("events").replaceChildren(...(r.events.length ? r.events : [{ message: "None" }]).map((e) =>
+    text("li", e.ts ? `${tfmt(e.ts, true)} — ${e.message}` : e.message)));
+}
+
+let hist = null;
+async function loadHistory() {
+  hist = await fetch(`/api/history?range=${range}&view=${view}`).then((x) => x.json());
+  const s = hist.summary, n = VIEWS[view];
+  // Headline direction first: providing is about what you deliver (out).
+  const order = view === "provide" ? [["out", n.out], ["in", n.in]] : [["in", n.in], ["out", n.out]];
+  const items = [];
+  for (const [key, label] of order) items.push([`${label} avg`, s[key].avg], [`${label} 95th pct`, s[key].p95], [`${label} peak`, s[key].peak]);
+  $("stats").replaceChildren(...items.map(([k, v]) => {
+    const d = text("div", "", "stat"); d.append(text("div", k, "k"), text("div", fmt(v), "v")); return d;
+  }));
+  $("bucket-note").textContent = hist.bucket > 60
+    ? `Each point is the average of ${Math.round(hist.bucket / 60)} min; peaks and 95th percentile use every raw 1-minute sample.`
+    : "";
+  $("legend").replaceChildren(...[["in", "var(--series-in)"], ["out", "var(--series-out)"]].map(([k, c]) => {
+    const sp = text("span", ""); const sw = text("span", "", "swatch"); sw.style.background = c;
+    sp.append(sw, n[k]); return sp;
+  }));
+  draw();
+}
+
+const NS = "http://www.w3.org/2000/svg";
+function el(name, attrs, parent) {
+  const e = document.createElementNS(NS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e); return e;
+}
+function niceMax(v) {
+  if (!v) return 1e9;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p;
+}
+
+function draw() {
+  const svg = $("chart"); svg.replaceChildren();
+  const W = svg.clientWidth, H = svg.clientHeight, m = { l: 64, r: 16, t: 12, b: 26 };
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const pts = hist ? hist.points : [];
+  const now = Date.now() / 1000, x0 = now - range, x1 = now;
+  const ymax = niceMax(Math.max(0, ...pts.map((p) => Math.max(p.in, p.out))) * 1.05);
+  const X = (t) => m.l + (t - x0) / (x1 - x0) * (W - m.l - m.r);
+  const Y = (v) => H - m.b - v / ymax * (H - m.t - m.b);
+  const axis = el("g", { class: "axis" }, svg);
+  for (let i = 0; i <= 4; i++) {
+    const v = ymax * i / 4, y = Y(v);
+    el("line", { x1: m.l, x2: W - m.r, y1: y, y2: y, class: "gridline" }, axis);
+    const [n, u] = fmt(v, true);
+    el("text", { x: m.l - 8, y: y + 4, "text-anchor": "end" }, axis).textContent = v ? `${parseFloat(n)} ${u}` : "0";
+  }
+  const ticks = Math.max(2, Math.floor((W - m.l - m.r) / 110));
+  for (let i = 0; i <= ticks; i++) {
+    const t = x0 + (x1 - x0) * i / ticks;
+    el("text", { x: X(t), y: H - 6, "text-anchor": i === 0 ? "start" : i === ticks ? "end" : "middle" }, axis).textContent = tfmt(t);
+  }
+  if (!pts.length) {
+    el("text", { x: W / 2, y: H / 2, "text-anchor": "middle", fill: "var(--text-muted)" }, svg).textContent = "No samples in this range yet";
+    return;
+  }
+  // Break the line where samples are missing instead of drawing a fake straight segment.
+  const gap = hist.bucket * 2.5;
+  for (const [key, color] of [["in", "var(--series-in)"], ["out", "var(--series-out)"]]) {
+    let d = "", prev = null;
+    for (const p of pts) {
+      d += `${prev === null || p.ts - prev > gap ? "M" : "L"}${X(p.ts).toFixed(1)},${Y(p[key]).toFixed(1)}`;
+      prev = p.ts;
+    }
+    el("path", { d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+  }
+  const cross = el("line", { y1: m.t, y2: H - m.b, stroke: "var(--text-muted)", "stroke-width": 1, visibility: "hidden" }, svg);
+  const dots = ["var(--series-in)", "var(--series-out)"].map((c) =>
+    el("circle", { r: 4, fill: c, stroke: "var(--surface-1)", "stroke-width": 2, visibility: "hidden" }, svg));
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+  const tip = $("tip"), n = VIEWS[view];
+  hit.addEventListener("pointermove", (ev) => {
+    const box = svg.getBoundingClientRect(), px = ev.clientX - box.left;
+    const t = x0 + (px - m.l) / (W - m.l - m.r) * (x1 - x0);
+    let best = pts[0];
+    for (const p of pts) if (Math.abs(p.ts - t) < Math.abs(best.ts - t)) best = p;
+    const x = X(best.ts);
+    cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
+    [best.in, best.out].forEach((v, i) => { dots[i].setAttribute("cx", x); dots[i].setAttribute("cy", Y(v)); dots[i].setAttribute("visibility", "visible"); });
+    const peak = hist.bucket > 60;
+    tip.replaceChildren(text("div", tfmt(best.ts, true), "t"));
+    for (const [label, v, mx, c] of [[n.in, best.in, best.in_max, "var(--series-in)"], [n.out, best.out, best.out_max, "var(--series-out)"]]) {
+      const row = text("div", "", "row"); const sw = text("span", "", "swatch"); sw.style.background = c;
+      row.append(sw, `${label} ${fmt(v)}${peak ? ` (peak ${fmt(mx)})` : ""}`);
+      tip.appendChild(row);
+    }
+    tip.style.display = "block";
+    tip.style.left = (x + 12 + tip.offsetWidth > W ? x - 12 - tip.offsetWidth : x + 12) + "px";
+    tip.style.top = "8px";
+  });
+  hit.addEventListener("pointerleave", () => {
+    tip.style.display = "none"; cross.setAttribute("visibility", "hidden");
+    dots.forEach((d) => d.setAttribute("visibility", "hidden"));
+  });
+}
+
+function bindToggle(groupId, attr, get, set) {
+  document.querySelectorAll(`#${groupId} button`).forEach((b) => {
+    b.setAttribute("aria-pressed", String(b.dataset[attr] === String(get())));
+    b.addEventListener("click", () => {
+      set(b.dataset[attr]);
+      document.querySelectorAll(`#${groupId} button`).forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
+      loadHistory();
+    });
+  });
+}
+bindToggle("ranges", "range", () => range, (v) => { range = Number(v); try { localStorage.setItem("range", v); } catch (e) {} });
+bindToggle("views", "view", () => view, (v) => { view = v; try { localStorage.setItem("view", v); } catch (e) {} });
+window.addEventListener("resize", draw);
+function refresh() { loadCurrent().catch(() => {}); loadHistory().catch(() => {}); }
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>

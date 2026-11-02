@@ -1,0 +1,421 @@
+{
+  "router_host": "172.16.212.251",
+  "snmp_conf_dir": ".secrets",
+  "poll_interval_seconds": 60,
+  "retention_days": 90,
+  "port_name_regex": "^(et|xe|ge|mge)-\\d+/\\d+/\\d+(:\\d+)?$",
+  "unit_name_regex": "^ae\\d+\\.\\d+$",
+  "exclude_ports": [],
+  "db_path": "bandwidth.db",
+  "listen_host": "127.0.0.1",
+  "listen_port": 8080,
+  "_roles_help": "Each logical unit belongs to exactly one role. buy = upstream transit you pay for; provide = customers and your own distribution routers; peer = private interconnects (not bought transit); cache = cache/CDN content sources; transport = traffic that only passes between two VLANs; mgmt = management. Any ae unit not listed is reported as unclassified.",
+  "roles": {
+    "buy": [
+      "ae3.751",
+      "ae3.754",
+      "ae3.1741",
+      "ae2.487",
+      "ae2.793",
+      "ae2.1051",
+      "ae2.1052",
+      "ae3.1044"
+    ],
+    "peer": [
+      "ae11.665",
+      "ae11.379",
+      "ae3.653",
+      "ae2.1382",
+      "ae2.1383"
+    ],
+    "cache": [
+      "ae2.321",
+      "ae2.322",
+      "ae2.368",
+      "ae2.400",
+      "ae2.75",
+      "ae2.57"
+    ],
+    "transport": [
+      "ae2.370",
+      "ae3.370",
+      "ae2.374",
+      "ae11.374"
+    ],
+    "mgmt": [
+      "ae2.3940",
+      "ae2.3941",
+      "ae2.3993",
+      "ae2.976"
+    ],
+    "provide": [
+      "ae2.17",
+      "ae2.19",
+      "ae2.20",
+      "ae2.45",
+      "ae2.46",
+      "ae2.47",
+      "ae2.48",
+      "ae2.66",
+      "ae2.70",
+      "ae2.71",
+      "ae2.100",
+      "ae2.151",
+      "ae2.312",
+      "ae2.353",
+      "ae2.361",
+      "ae2.364",
+      "ae2.371",
+      "ae2.372",
+      "ae2.373",
+      "ae2.376",
+      "ae2.383",
+      "ae2.393",
+      "ae2.398",
+      "ae2.399",
+      "ae2.706",
+      "ae2.1001",
+      "ae2.1002",
+      "ae2.1090",
+      "ae2.1091",
+      "ae2.1211",
+      "ae2.1212",
+      "ae2.1235",
+      "ae2.1322",
+      "ae2.1323",
+      "ae2.1325",
+      "ae2.2227",
+      "ae2.2228",
+      "ae2.2232",
+      "ae2.2233",
+      "ae2.2237",
+      "ae2.2250",
+      "ae2.2269",
+      "ae2.2547",
+      "ae2.2548",
+      "ae2.2998",
+      "ae3.375",
+      "ae3.2213",
+      "ae3.2226",
+      "ae3.2240",
+      "xe-0/1/3.3175"
+    ]
+  },
+  "_contracts_help": "Contracted capacity per upstream unit in Gbps (not stored on the router). null = unknown.",
+  "contracts_gbps": {
+    "ae3.751": null,
+    "ae3.754": null,
+    "ae3.1741": null
+  },
+  "_notes_help": "Why each unit is in its role, and how confident the classification is (High/Medium/Low). Shown on the dashboard.",
+  "notes": {
+    "ae3.751": [
+      "High",
+      "Summit (AS132884) sends the full internet table; carries the active default route"
+    ],
+    "ae3.754": [
+      "High",
+      "Summit (AS132884) sends the full internet table; backup link"
+    ],
+    "ae3.1741": [
+      "High",
+      "Bharti (AS9498) sends the full internet table; preferred default route"
+    ],
+    "ae2.487": [
+      "Medium",
+      "FGL (AS10075) BGP, currently down; upstream-style policy (AS-path prepend outbound)"
+    ],
+    "ae2.793": [
+      "Medium",
+      "FGL (AS10075) BGP, currently down; upstream-style policy (AS-path prepend outbound)"
+    ],
+    "ae2.1051": [
+      "Medium",
+      "FGL-IPT (AS10075) BGP; link disabled; upstream-style policy"
+    ],
+    "ae2.1052": [
+      "Medium",
+      "FGL-IPT-SEC (AS10075) BGP; link disabled; upstream-style policy"
+    ],
+    "ae3.1044": [
+      "Medium",
+      "FGL-ITC (AS153370) BGP; link disabled"
+    ],
+    "ae2.19": [
+      "High",
+      "MirInfo (AS138004): router sends it the full table, receives few routes"
+    ],
+    "ae2.398": [
+      "High",
+      "MISL (AS138004): router sends it the full table, receives few routes"
+    ],
+    "ae2.353": [
+      "High",
+      "FNA-RTR (AS138346): router sends it a default route only"
+    ],
+    "ae2.1001": [
+      "High",
+      "SS-Online: router sends full-route-for-Client; 1050 Mbps policer"
+    ],
+    "ae2.1002": [
+      "High",
+      "SS-Online: router sends full-route-for-Client; 1050 Mbps policer"
+    ],
+    "ae2.1090": [
+      "High",
+      "Stargate (AS45905): router sends default-only"
+    ],
+    "ae2.2269": [
+      "High",
+      "Unique-Net (AS140934): router sends default-only"
+    ],
+    "ae2.2547": [
+      "High",
+      "TSL (AS45766): router sends full-route-for-Client"
+    ],
+    "ae2.2548": [
+      "High",
+      "TSL (AS45766): router sends full-route-for-Client"
+    ],
+    "ae2.1211": [
+      "High",
+      "Bijoy Online (AS24556): router sends default-only; link disabled"
+    ],
+    "ae2.1322": [
+      "High",
+      "TSL (AS45766): router sends full-route-for-Client; link disabled"
+    ],
+    "xe-0/1/3.3175": [
+      "High",
+      "SR-Communication (AS139841): router sends default-only; port disabled"
+    ],
+    "ae2.17": [
+      "Medium",
+      "STL-PASN (AS64599) customer BGP; link disabled"
+    ],
+    "ae2.312": [
+      "High",
+      "Own router DIS-02 (iBGP, AS149994): router sends it the full table"
+    ],
+    "ae2.361": [
+      "High",
+      "Own router PTX (iBGP): router sends it the full table"
+    ],
+    "ae2.71": [
+      "High",
+      "Own router DHK-COLO (iBGP): router sends it the full table"
+    ],
+    "ae2.151": [
+      "High",
+      "Own router DHK-COLO (iBGP): router sends it the full table"
+    ],
+    "ae2.45": [
+      "Medium",
+      "Own router MX480 (iBGP), session currently down"
+    ],
+    "ae3.2213": [
+      "Medium",
+      "Stargate iBGP, session currently down"
+    ],
+    "ae3.2240": [
+      "Medium",
+      "Stargate iBGP; link disabled"
+    ],
+    "ae2.393": [
+      "Low",
+      "PTX-EdgeNext (iBGP, router sends 1 route); EdgeNext is a CDN, so confirm"
+    ],
+    "ae2.46": [
+      "Low",
+      "NTTN-RTR; FNA-MX204 BGP configured but down; by name"
+    ],
+    "ae2.66": [
+      "Low",
+      "IIG-RT (AS58715) BGP configured but down; role unclear"
+    ],
+    "ae11.665": [
+      "Medium",
+      "FGL PNI: two-way traffic, not internet transit. Paid? Confirm; if so it belongs in Buying"
+    ],
+    "ae11.379": [
+      "Medium",
+      "FGL PNI backup. Paid? Confirm"
+    ],
+    "ae3.653": [
+      "Medium",
+      "FGL PNI primary (down). Paid? Confirm"
+    ],
+    "ae2.1382": [
+      "Low",
+      "FGL Google PNI (by name)"
+    ],
+    "ae2.1383": [
+      "Low",
+      "FGL Google PNI (by name)"
+    ],
+    "ae2.321": [
+      "Medium",
+      "GGC peering (by name); traffic flows into the router"
+    ],
+    "ae2.322": [
+      "Medium",
+      "GGC peering (by name)"
+    ],
+    "ae2.368": [
+      "Low",
+      "GGC to PTX (by name)"
+    ],
+    "ae2.400": [
+      "Low",
+      "CDN iBGP; name says IPT, so confirm it is not paid transit"
+    ],
+    "ae2.75": [
+      "Medium",
+      "CDN-RT (iBGP); CDN content source"
+    ],
+    "ae2.57": [
+      "Low",
+      "GGC router (by name)"
+    ],
+    "ae2.370": [
+      "High",
+      "Mirrors ae3.370 exactly: traffic only passes between the two VLANs"
+    ],
+    "ae3.370": [
+      "High",
+      "Mirrors ae2.370 exactly: traffic only passes between the two VLANs"
+    ],
+    "ae2.374": [
+      "Low",
+      "FGL PNI loop (by name)"
+    ],
+    "ae11.374": [
+      "Low",
+      "FGL PNI loop (by name); down"
+    ],
+    "ae2.3940": [
+      "Medium",
+      "ColoAsia NTTN switch management"
+    ],
+    "ae2.3941": [
+      "Medium",
+      "ColoAsia NTTN switch management"
+    ],
+    "ae2.3993": [
+      "Low",
+      "NTTN switch (by name)"
+    ],
+    "ae2.976": [
+      "Medium",
+      "Fastnetmon (DDoS detection); disabled"
+    ],
+    "ae2.20": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.47": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.48": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.70": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.100": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.364": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.371": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.372": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.373": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.376": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.383": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.399": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.706": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.1091": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.1212": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.1235": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.1323": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.1325": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.2227": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.2228": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.2232": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.2233": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.2237": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.2250": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae2.2998": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae3.375": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ],
+    "ae3.2226": [
+      "Low",
+      "No BGP on this router; classified by description and traffic flowing out to it"
+    ]
+  }
+}

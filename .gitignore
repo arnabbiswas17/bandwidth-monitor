@@ -1,0 +1,14 @@
+# Secrets: SNMP community lives here
+.secrets/
+.env
+*.conf
+!snmp.conf.example
+
+# Runtime data
+*.db
+*.db-shm
+*.db-wal
+
+# Python
+__pycache__/
+*.pyc
